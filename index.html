@@ -135,6 +135,12 @@
         color: var(--muted);
         margin-top: 12px;
       }
+      .counter__num {
+        font-size: 1.9em;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: 0.02em;
+      }
       .warn {
         margin-top: 16px;
         padding: 12px 14px;
@@ -190,6 +196,13 @@
       const motionStatus = document.getElementById('motionStatus');
       const shakeCounter = document.getElementById('shakeCounter');
       const desktopWarn = document.getElementById('desktopWarn');
+
+      /**
+       * @param {number} count
+       */
+      function renderShakeCounter(count) {
+        shakeCounter.innerHTML = 'この1秒: <span class="counter__num">' + count + '</span> 回';
+      }
 
       function teamLabel(team) {
         return team === 'red' ? '紅' : '白';
@@ -250,7 +263,7 @@
         if (strength > threshold && now - lastPeakTime >= SHAKE_COOLDOWN_MS) {
           lastPeakTime = now;
           shakesThisSecond += 1;
-          shakeCounter.textContent = 'この1秒: ' + shakesThisSecond + ' 回';
+          renderShakeCounter(shakesThisSecond);
         }
       }
 
@@ -261,7 +274,7 @@
         postIntervalId = window.setInterval(function () {
           const count = shakesThisSecond;
           shakesThisSecond = 0;
-          shakeCounter.textContent = 'この1秒: 0 回';
+          renderShakeCounter(0);
           if (!selectedTeam) {
             return;
           }
@@ -314,7 +327,7 @@
 
         window.addEventListener('devicemotion', onDeviceMotion, true);
         motionStatus.textContent = 'センサー待機中… 端末を振ってください。';
-        shakeCounter.textContent = 'この1秒: 0 回';
+        renderShakeCounter(0);
         startPosting();
       }
 
