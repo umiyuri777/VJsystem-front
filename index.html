@@ -280,6 +280,10 @@
           if (!selectedTeam) {
             return;
           }
+          // shake_count(count) が 0 以上のときだけ送信する
+          if (typeof count !== 'number' || Number.isNaN(count) || count < 0) {
+            return;
+          }
           // GETメソッドでselectedTeamとcountをクエリパラメータで送信
           const params = new URLSearchParams({
             selectedTeam: selectedTeam,
