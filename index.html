@@ -174,6 +174,8 @@
     </div>
 
     <script>
+      const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyQ6l9jrJl7EDEbc2W0TPGX1aSUvLgh4DEZuBZl0z9VPR1Ub3mto1Q_ELjaWzYxdue0xQ/exec';
+      
       /** @type {'red' | 'white' | null} */
       let selectedTeam = null;
 
@@ -267,7 +269,7 @@
         }
       }
 
-      function startPosting() {
+      function gasRequest() {
         if (postIntervalId) {
           clearInterval(postIntervalId);
         }
@@ -278,20 +280,29 @@
           if (!selectedTeam) {
             return;
           }
-          if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run
-              .withFailureHandler(function (err) {
-                console.error(err);
-              })
-              .withSuccessHandler(function (result) {
-                if (result && result.ok === false) {
-                  console.error(result);
-                }
-              })
-              .reportShake(selectedTeam, count);
-          } else {
-            console.error('google.script.run が使えません（GAS のウェブアプリとして開いてください）。');
-          }
+          // GETメソッドでselectedTeamとcountをクエリパラメータで送信
+          const params = new URLSearchParams({
+            selectedTeam: selectedTeam,
+            count: count,
+          });
+
+          fetch(`${GAS_ENDPOINT}?${params.toString()}`, {
+            method: 'GET',
+          })
+          .then(function (response) {
+            if (!response.ok) {
+              return response.text().then((text) => { throw new Error(text); });
+            }
+            return response.json().catch(() => ({}));
+          })
+          .then(function (result) {
+            if (result && result.ok === false) {
+              console.error(result);
+            }
+          })
+          .catch(function (err) {
+            console.error(err);
+          });
         }, 1000);
       }
 
@@ -328,7 +339,7 @@
         window.addEventListener('devicemotion', onDeviceMotion, true);
         motionStatus.textContent = 'センサー待機中… 端末を振ってください。';
         renderShakeCounter(0);
-        startPosting();
+        gasRequest();
       }
 
       document.querySelectorAll('.team-btn[data-team]').forEach(function (btn) {
