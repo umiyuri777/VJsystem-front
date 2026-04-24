@@ -1,5 +1,5 @@
 const GAS_ENDPOINT =
-  'https://script.google.com/macros/s/AKfycbymEvpDAzKonicLZG7i0YVel45c_l4NggRUYmYbwS3OhpET9RxFkLIKBj9D996X7AKMZA/exec';
+  'https://script.google.com/macros/s/AKfycbyRhiJd_ZyVfhO0Lq7cB82vMwCss4IGDhv9zkx53OvGhG04TXbtU4UQ1AZIkGOYhR8NSw/exec';
 
 /** @type {'red' | 'white' | null} */
 let selectedTeam = null;
