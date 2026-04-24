@@ -1,8 +1,12 @@
 const GAS_ENDPOINT =
-  'https://script.google.com/macros/s/AKfycbxLrtSrMB7on7RUFqsz3v_xk_pM_mVHA8gvsHEkALmniO77ouoU-4jBqTqePmnMMvGR6Q/exec';
+  'https://script.google.com/macros/s/AKfycbxY89Ks_QcFDr_KeHSbtNr8Zg0vfznscQbmYSwZCpymcnhHKdTLyMQxCxPzjtGqJfhsYQ/exec';
 
 /** @type {'red' | 'white' | null} */
 let selectedTeam = null;
+
+const USER_ID_STORAGE_KEY = 'vj_userid';
+/** @type {string | null} */
+let currentUserId = null;
 
 const SHAKE_COOLDOWN_MS = 180;
 /** 線形加速度 (m/s²) 用 */
@@ -33,6 +37,51 @@ function renderShakeCounter(count) {
 
 function teamLabel(team) {
   return team === 'red' ? '紅' : '白';
+}
+
+function loadUserId() {
+  try {
+    const v = window.localStorage.getItem(USER_ID_STORAGE_KEY);
+    if (!v) return null;
+    const s = String(v).trim();
+    return s ? s : null;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+/**
+ * @param {string} userId
+ */
+function saveUserId(userId) {
+  try {
+    window.localStorage.setItem(USER_ID_STORAGE_KEY, userId);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function fetchUserId() {
+  const params = new URLSearchParams({ get_user_id: 'true' });
+  const response = await fetch(`${GAS_ENDPOINT}?${params.toString()}`, { method: 'GET' });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(text || 'Failed to fetch userId');
+  }
+  const result = await response.json().catch(() => ({}));
+  if (!result || result.ok !== true || !result.userId) {
+    throw new Error('Invalid userId response');
+  }
+  return String(result.userId);
+}
+
+async function ensureUserId() {
+  const cached = loadUserId();
+  if (cached) return cached;
+  const fetched = await fetchUserId();
+  saveUserId(fetched);
+  return fetched;
 }
 
 /**
@@ -94,7 +143,10 @@ function onDeviceMotion(event) {
   }
 }
 
-function gasRequest() {
+/**
+ * @param {string} userId
+ */
+function gasRequest(userId) {
   if (postIntervalId) {
     clearInterval(postIntervalId);
   }
@@ -113,6 +165,7 @@ function gasRequest() {
     const params = new URLSearchParams({
       selectedTeam: selectedTeam,
       count: count,
+      userid: userId,
     });
 
     fetch(`${GAS_ENDPOINT}?${params.toString()}`, {
@@ -168,9 +221,17 @@ async function onChooseTeam(team) {
   }
 
   window.addEventListener('devicemotion', onDeviceMotion, true);
-  motionStatus.textContent = 'センサー待機中… 端末を振ってください。';
+  motionStatus.textContent = 'ユーザーID取得中…';
   renderShakeCounter(0);
-  gasRequest();
+
+  try {
+    currentUserId = await ensureUserId();
+    motionStatus.textContent = 'センサー待機中… 端末を振ってください。';
+    gasRequest(currentUserId);
+  } catch (e) {
+    console.error(e);
+    motionStatus.textContent = 'ユーザーID取得に失敗しました。通信環境を確認して再読み込みしてください。';
+  }
 }
 
 document.querySelectorAll('.team-btn[data-team]').forEach(function (btn) {
