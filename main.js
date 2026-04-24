@@ -105,8 +105,8 @@ function gasRequest() {
     if (!selectedTeam) {
       return;
     }
-    // shake_count(count) が 0 以上のときだけ送信する
-    if (typeof count !== 'number' || Number.isNaN(count) || count < 0) {
+    // 0回のときは送らない（回数が正のときだけ送信）
+    if (typeof count !== 'number' || Number.isNaN(count) || count <= 0) {
       return;
     }
     // GETメソッドでselectedTeamとcountをクエリパラメータで送信
